@@ -1,0 +1,190 @@
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as QQC2
+import QtQuick.Effects
+import org.kde.kirigami as Kirigami
+
+// Panel de Notificaciones — Bloque 3: modelo REAL de notificaciones.
+// ⚠️ Parte más riesgosa del bloque: si "org.kde.notificationmanager" no carga,
+// SOLO este panel falla (Centro de Control sigue funcionando) — avísame el
+// error exacto de la terminal para ajustar nombres de roles/métodos.
+Rectangle {
+    id: root
+    property var notificationModel
+
+    readonly property color cBlack:      Qt.rgba(10 / 255, 10 / 255, 12 / 255, 0.88)
+    readonly property color cGray:       "#1A1A1A"
+    readonly property color cCrimson:    "#DC143C"
+    readonly property color cWhite:      "#FFFFFF"
+    readonly property color cLightGray:  "#B3B3B3"
+    readonly property color cCardBorder: Qt.rgba(1, 1, 1, 0.12)
+
+    color: cBlack
+    radius: 22
+    border.color: cCardBorder
+    border.width: 1
+
+    layer.enabled: true
+    layer.effect: MultiEffect {
+        shadowEnabled: true
+        shadowColor: "#000000"
+        shadowOpacity: 0.55
+        shadowBlur: 0.7
+        shadowVerticalOffset: 10
+        shadowHorizontalOffset: 0
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 20
+        spacing: 14
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+
+            Kirigami.Icon {
+                source: "notifications"; isMask: true
+                Layout.preferredWidth: 22; Layout.preferredHeight: 22
+                color: cWhite
+            }
+            QQC2.Label {
+                text: "Notificaciones"
+                font.pixelSize: 20; font.bold: true; color: cWhite
+            }
+            QQC2.Label {
+                text: SystemStatus.doNotDisturb ? "No molestar activo" : "Avisos del sistema"
+                color: cLightGray; font.pixelSize: 11
+                Accessible.name: text
+            }
+            Rectangle {
+                width: 24; height: 24; radius: 12
+                color: cCrimson
+                visible: root.notificationModel.count > 0
+
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    shadowEnabled: true; shadowColor: cCrimson
+                    shadowOpacity: 0.7; shadowBlur: 0.6
+                }
+                QQC2.Label {
+                    anchors.centerIn: parent
+                    text: root.notificationModel.count
+                    color: cWhite; font.pixelSize: 12; font.bold: true
+                }
+            }
+            Item { Layout.fillWidth: true }
+            QQC2.ToolButton {
+                icon.name: "overflow-menu"; icon.color: cLightGray; flat: true
+                enabled: MockData.kcmshellAvailable
+                Accessible.name: "Más opciones de notificaciones"
+                onClicked: MockData.run("kcmshell6 kcm_notifications")
+            }
+        }
+
+        // ----- Estado vacío -----
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: root.notificationModel.count === 0
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 12
+                Kirigami.Icon {
+                    source: "notifications"
+                    isMask: true; color: "#3A3A3A"
+                    Layout.preferredWidth: 44; Layout.preferredHeight: 44
+                    Layout.alignment: Qt.AlignHCenter
+                }
+                QQC2.Label {
+                    text: "No hay notificaciones nuevas"
+                    color: cLightGray; font.pixelSize: 14
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+        }
+
+        // ----- Lista real -----
+        ListView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 10
+            clip: true
+            visible: root.notificationModel.count > 0
+            model: root.notificationModel
+
+            delegate: Rectangle {
+                width: ListView.view.width
+                height: notifLayout.implicitHeight + 24
+                radius: 14
+                color: cGray
+                border.color: cCardBorder
+                border.width: 1
+
+                RowLayout {
+                    id: notifLayout
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 12
+
+                    Rectangle {
+                        Layout.preferredWidth: 38; Layout.preferredHeight: 38; radius: 19
+                        color: cCrimson
+                        Kirigami.Icon {
+                            anchors.centerIn: parent
+                            width: 20; height: 20
+                            source: model.iconName || model.desktopEntry || "dialog-information"
+                            isMask: true; color: cWhite
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            QQC2.Label {
+                                text: model.summary || model.applicationName || "Notificación"
+                                color: cWhite; font.pixelSize: 14; font.bold: true
+                                Layout.fillWidth: true; elide: Text.ElideRight
+                            }
+                            QQC2.Label {
+                                text: model.updated ? Qt.formatTime(model.updated, "hh:mm") : ""
+                                color: cLightGray; font.pixelSize: 11
+                            }
+                        }
+                        QQC2.Label {
+                            text: model.body || ""
+                            color: cLightGray; font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+                    }
+
+                    QQC2.ToolButton {
+                        icon.name: "window-close"
+                        icon.color: "#7a7a7a"
+                        flat: true
+                        visible: model.closable !== false
+                        onClicked: root.notificationModel.close(index)
+                    }
+                }
+            }
+        }
+
+        QQC2.Button {
+            Layout.fillWidth: true
+            text: "Borrar todo"
+            icon.name: "edit-clear-all"
+            icon.color: cLightGray
+            flat: true
+            visible: true
+            onClicked: {
+                for (let i = root.notificationModel.count - 1; i >= 0; i--) {
+                    root.notificationModel.close(i)
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,22 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=DylanOS Browser
+GenericName=Navegador web
+Comment=Navega por la web con DylanOS Browser
+Exec=dylanos-browser %U
+TryExec=dylanos-browser
+Icon=dylanos-browser
+Terminal=false
+Categories=Network;WebBrowser;
+MimeType=text/html;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+StartupWMClass=org.dylanos.browser
+Actions=new-window;private-window;
+
+[Desktop Action new-window]
+Name=Nueva ventana
+Exec=dylanos-browser
+
+[Desktop Action private-window]
+Name=Nueva ventana privada
+Exec=dylanos-browser --private-window

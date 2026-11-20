@@ -1,0 +1,35 @@
+#pragma once
+#include <QAbstractListModel>
+#include <QList>
+#include <KService>
+
+class AppModel : public QAbstractListModel
+{
+    Q_OBJECT
+public:
+    enum Roles { NameRole = Qt::UserRole + 1, IconRole, ExecRole, CommentRole, DesktopIdRole };
+
+    explicit AppModel(QObject *parent = nullptr);
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+    Q_INVOKABLE void launchApp(const QString &desktopId);
+    Q_INVOKABLE void refresh();
+    Q_INVOKABLE int pageCount(int pageSize) const;
+    Q_INVOKABLE QVariantList itemsForPage(int page, int pageSize) const;
+    Q_INVOKABLE void setFilter(const QString &text);
+
+signals:
+    void launchSucceeded();
+    void launchFailed(const QString &message);
+
+private:
+    void loadApps();
+    void rebuildVisibleApps() const;
+    QList<KService::Ptr> m_apps;
+    QString m_filter;
+    mutable QList<int> m_visibleAppIndexes;
+    mutable bool m_visibleAppsDirty = true;
+};

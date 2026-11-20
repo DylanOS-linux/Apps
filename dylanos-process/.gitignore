@@ -1,0 +1,15 @@
+# Compilación nativa
+/build*
+*.qmlc
+*kdev*
+*.kate-swp
+.cache
+.idea
+
+# Rust (núcleo de datos)
+/core/target/
+
+# Herramientas de editor
+.clang-format
+.clangd
+/compile_commands.json

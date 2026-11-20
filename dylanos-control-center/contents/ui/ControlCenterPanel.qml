@@ -1,0 +1,621 @@
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as QQC2
+import QtQuick.Effects
+import org.kde.kirigami as Kirigami
+
+// Panel de Centro de Control — Bloque 3: TODO conectado a datos reales
+// (Wi-Fi, Bluetooth, brillo, volumen, modo oscuro, no molestar local, MPRIS)
+Rectangle {
+    id: root
+
+    readonly property color cBlack:      Qt.rgba(10 / 255, 10 / 255, 12 / 255, 0.88)
+    readonly property color cGray:       "#1A1A1A"
+    readonly property color cCrimson:    "#DC143C"
+    readonly property color cWhite:      "#FFFFFF"
+    readonly property color cLightGray:  "#B3B3B3"
+    readonly property color cCardBorder: Qt.rgba(1, 1, 1, 0.12)
+
+    color: cBlack
+    radius: 22
+    border.color: cCardBorder
+    border.width: 1
+    onVisibleChanged: if (visible) { MockData.refreshGaming(); MockData.refreshIoT() }
+
+    layer.enabled: true
+    layer.effect: MultiEffect {
+        shadowEnabled: true
+        shadowColor: "#000000"
+        shadowOpacity: 0.55
+        shadowBlur: 0.7
+        shadowVerticalOffset: 10
+        shadowHorizontalOffset: 0
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 20
+        spacing: 16
+
+        Component.onCompleted: { MockData.refreshGaming(); MockData.refreshIoT() }
+        Timer {
+            interval: 15000
+            repeat: true
+            running: root.visible
+            onTriggered: { MockData.refreshGaming(); MockData.refreshIoT() }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+
+            Kirigami.Icon {
+                source: "configure"; isMask: true
+                Layout.preferredWidth: 22; Layout.preferredHeight: 22
+                color: cWhite
+            }
+            QQC2.Label {
+                text: "Centro de control"
+                font.pixelSize: 20; font.bold: true; color: cWhite
+            }
+            Item { Layout.fillWidth: true }
+            QQC2.ToolButton {
+                icon.name: "document-edit"; icon.color: cLightGray; flat: true
+                Accessible.name: "Abrir configuración del sistema"
+                onClicked: MockData.run("dylanos --page settings")
+            }
+        }
+
+        // Grid 2x2 — Conectado a SystemStatus
+        GridLayout {
+            Layout.fillWidth: true
+            columns: 2
+            rowSpacing: 10
+            columnSpacing: 10
+
+            // ----- Wi-Fi -----
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 90
+                radius: 16
+                color: SystemStatus.wifiPowered ? cCrimson : cGray
+                border.color: SystemStatus.wifiPowered ? Qt.lighter(cCrimson, 1.25) : cCardBorder
+                border.width: 1
+                opacity: SystemStatus.wifiAvailable ? 1.0 : 0.5
+
+                layer.enabled: SystemStatus.wifiPowered
+                layer.effect: MultiEffect {
+                    shadowEnabled: true; shadowColor: cCrimson
+                    shadowOpacity: 0.5; shadowBlur: 0.8
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: SystemStatus.wifiAvailable
+                    onClicked: SystemStatus.toggleWifi()
+                }
+
+                ColumnLayout {
+                    anchors.fill: parent; anchors.margins: 12; spacing: 4
+                    Kirigami.Icon {
+                        source: "network-wireless"; isMask: true
+                        color: SystemStatus.wifiPowered ? cWhite : cLightGray
+                        Layout.preferredWidth: 22; Layout.preferredHeight: 22
+                    }
+                    Item { Layout.fillHeight: true }
+                    QQC2.Label {
+                        text: "Wi-Fi"
+                        color: cWhite
+                        font.pixelSize: 13; font.bold: true
+                    }
+                    QQC2.Label {
+                        text: !SystemStatus.wifiAvailable ? "No detectado"
+                              : SystemStatus.wifiPowered ? (SystemStatus.wifiSsid || "Conectado")
+                              : "Desactivado"
+                        color: SystemStatus.wifiPowered ? Qt.rgba(1, 1, 1, 0.85) : cLightGray
+                        font.pixelSize: 11
+                    }
+                }
+            }
+
+            // ----- Bluetooth -----
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 90
+                radius: 16
+                color: SystemStatus.bluetoothPowered ? cCrimson : cGray
+                border.color: SystemStatus.bluetoothPowered ? Qt.lighter(cCrimson, 1.25) : cCardBorder
+                border.width: 1
+                opacity: SystemStatus.bluetoothAvailable ? 1.0 : 0.5
+
+                layer.enabled: SystemStatus.bluetoothPowered
+                layer.effect: MultiEffect {
+                    shadowEnabled: true; shadowColor: cCrimson
+                    shadowOpacity: 0.5; shadowBlur: 0.8
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: SystemStatus.bluetoothAvailable
+                    onClicked: SystemStatus.toggleBluetooth()
+                }
+
+                ColumnLayout {
+                    anchors.fill: parent; anchors.margins: 12; spacing: 4
+                    Kirigami.Icon {
+                        source: "preferences-system-bluetooth"; isMask: true
+                        color: SystemStatus.bluetoothPowered ? cWhite : cLightGray
+                        Layout.preferredWidth: 22; Layout.preferredHeight: 22
+                    }
+                    Item { Layout.fillHeight: true }
+                    QQC2.Label {
+                        text: "Bluetooth"
+                        color: cWhite
+                        font.pixelSize: 13; font.bold: true
+                    }
+                    QQC2.Label {
+                        text: !SystemStatus.bluetoothAvailable ? "No detectado"
+                              : SystemStatus.bluetoothPowered ? "Activo" : "Desactivado"
+                        color: SystemStatus.bluetoothPowered ? Qt.rgba(1, 1, 1, 0.85) : cLightGray
+                        font.pixelSize: 11
+                    }
+                }
+            }
+
+            // ----- No molestar (local al widget) -----
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 90
+                radius: 16
+                color: SystemStatus.doNotDisturb ? cCrimson : cGray
+                border.color: SystemStatus.doNotDisturb ? Qt.lighter(cCrimson, 1.25) : cCardBorder
+                border.width: 1
+
+                layer.enabled: SystemStatus.doNotDisturb
+                layer.effect: MultiEffect {
+                    shadowEnabled: true; shadowColor: cCrimson
+                    shadowOpacity: 0.5; shadowBlur: 0.8
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: !SystemStatus.dndLockedByApplication
+                    Accessible.role: Accessible.Button
+                    Accessible.name: SystemStatus.doNotDisturb ? "Desactivar No molestar" : "Activar No molestar durante ocho horas"
+                    onClicked: SystemStatus.toggleDoNotDisturb()
+                }
+
+                ColumnLayout {
+                    anchors.fill: parent; anchors.margins: 12; spacing: 4
+                    Kirigami.Icon {
+                        source: "notifications-disabled"; isMask: true
+                        color: SystemStatus.doNotDisturb ? cWhite : cLightGray
+                        Layout.preferredWidth: 22; Layout.preferredHeight: 22
+                    }
+                    Item { Layout.fillHeight: true }
+                    QQC2.Label {
+                        text: "No molestar"
+                        color: cWhite
+                        font.pixelSize: 13; font.bold: true
+                    }
+                    QQC2.Label {
+                        text: SystemStatus.dndLockedByApplication ? "Gestionado por una aplicación"
+                              : SystemStatus.doNotDisturb ? "Activado" : "Desactivado"
+                        color: SystemStatus.doNotDisturb ? Qt.rgba(1, 1, 1, 0.85) : cLightGray
+                        font.pixelSize: 11; elide: Text.ElideRight; Layout.fillWidth: true
+                    }
+                }
+            }
+
+            // ----- Modo oscuro -----
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 90
+                radius: 16
+                color: SystemStatus.darkModeActive ? cCrimson : cGray
+                border.color: SystemStatus.darkModeActive ? Qt.lighter(cCrimson, 1.25) : cCardBorder
+                border.width: 1
+
+                layer.enabled: SystemStatus.darkModeActive
+                layer.effect: MultiEffect {
+                    shadowEnabled: true; shadowColor: cCrimson
+                    shadowOpacity: 0.5; shadowBlur: 0.8
+                }
+
+                MouseArea { anchors.fill: parent; onClicked: SystemStatus.toggleDarkMode() }
+
+                ColumnLayout {
+                    anchors.fill: parent; anchors.margins: 12; spacing: 4
+                    Kirigami.Icon {
+                        source: "weather-clear-night"; isMask: true
+                        color: SystemStatus.darkModeActive ? cWhite : cLightGray
+                        Layout.preferredWidth: 22; Layout.preferredHeight: 22
+                    }
+                    Item { Layout.fillHeight: true }
+                    QQC2.Label {
+                        text: "Modo oscuro"
+                        color: cWhite
+                        font.pixelSize: 13; font.bold: true
+                    }
+                    QQC2.Label {
+                        text: SystemStatus.darkModeActive ? "Activado" : "Desactivado"
+                        color: SystemStatus.darkModeActive ? Qt.rgba(1, 1, 1, 0.85) : cLightGray
+                        font.pixelSize: 11
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 138
+            radius: 16
+            color: cGray
+            border.color: cCardBorder
+            border.width: 1
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 8
+                RowLayout {
+                    Layout.fillWidth: true
+                    Kirigami.Icon {
+                        source: "input-gaming"
+                        isMask: true
+                        color: cCrimson
+                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 20
+                    }
+                    QQC2.Label {
+                        text: "Gaming"
+                        color: cWhite
+                        font.pixelSize: 14
+                        font.bold: true
+                    }
+                    QQC2.Label {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignRight
+                        text: (MockData.gamingStatus.activeProfile || "Sin perfil")
+                              + (MockData.gamingStatus.gpuVendor && MockData.gamingStatus.gpuVendor !== "unknown" ? " · " + MockData.gamingStatus.gpuVendor.toUpperCase() : "")
+                        color: cLightGray
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                    }
+                    QQC2.ToolButton {
+                        icon.name: "configure"
+                        icon.color: cLightGray
+                        flat: true
+                        Accessible.name: "Abrir Gaming en DylanOS Configuration"
+                        onClicked: MockData.openGamingSettings()
+                    }
+                }
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: 3
+                    columnSpacing: 6
+                    rowSpacing: 4
+                    Repeater {
+                        model: [
+                            { id: "balanced", label: "Equilibrado" },
+                            { id: "performance", label: "Rendimiento" },
+                            { id: "competitive", label: "Competitivo" },
+                            { id: "streaming", label: "Streaming" },
+                            { id: "emulation", label: "Emulación" }
+                        ]
+                        delegate: QQC2.ToolButton {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            text: modelData.label
+                            flat: true
+                            highlighted: MockData.gamingStatus.activeProfile === modelData.id
+                            Accessible.name: "Activar perfil Gaming " + modelData.label
+                            onClicked: SystemStatus.applyGamingProfile(modelData.id)
+                        }
+                    }
+                    QQC2.ToolButton {
+                        Layout.fillWidth: true
+                        text: "Restaurar"
+                        flat: true
+                        enabled: MockData.gamingStatus.hasBackup === true
+                        Accessible.name: "Restaurar ajustes previos a Gaming"
+                        onClicked: SystemStatus.restoreGamingProfile()
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 82
+            radius: 16
+            color: cGray
+            border.color: cCardBorder
+            border.width: 1
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 10
+                Kirigami.Icon {
+                    source: "computer"
+                    isMask: true
+                    color: cCrimson
+                    Layout.preferredWidth: 20
+                    Layout.preferredHeight: 20
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 3
+                    QQC2.Label { text: "IoT & Embedded"; color: cWhite; font.pixelSize: 14; font.bold: true }
+                    QQC2.Label {
+                        text: (MockData.iotStatus.devices ? MockData.iotStatus.devices.length : 0) + " puertos serie · MQTT "
+                              + (MockData.iotStatus.mqttLocal ? "activo" : "inactivo")
+                        color: cLightGray
+                        font.pixelSize: 11
+                    }
+                }
+                QQC2.ToolButton {
+                    text: "Abrir"
+                    flat: true
+                    Accessible.name: "Abrir IoT en DylanOS Configuration"
+                    onClicked: MockData.openIoTSettings()
+                }
+            }
+        }
+
+        // ----- Brillo (real) -----
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            Kirigami.Icon {
+                source: "display-brightness"; isMask: true; color: cLightGray
+                Layout.preferredWidth: 20; Layout.preferredHeight: 20
+            }
+            QQC2.Slider {
+                id: brightnessSlider
+                Layout.fillWidth: true
+                from: 0; to: 1
+                enabled: SystemStatus.brightnessAvailable
+                onMoved: SystemStatus.setBrightness(value)
+
+                Binding {
+                    target: brightnessSlider; property: "value"
+                    value: SystemStatus.brightnessValue
+                    when: !brightnessSlider.pressed
+                }
+
+                background: Rectangle {
+                    x: brightnessSlider.leftPadding
+                    y: brightnessSlider.topPadding + brightnessSlider.availableHeight / 2 - height / 2
+                    width: brightnessSlider.availableWidth; height: 6; radius: 3
+                    color: cGray
+                    Rectangle {
+                        width: brightnessSlider.visualPosition * parent.width
+                        height: parent.height; radius: 3; color: cCrimson
+                    }
+                }
+                handle: Rectangle {
+                    x: brightnessSlider.leftPadding + brightnessSlider.visualPosition * (brightnessSlider.availableWidth - width)
+                    y: brightnessSlider.topPadding + brightnessSlider.availableHeight / 2 - height / 2
+                    width: 18; height: 18; radius: 9; color: cWhite
+                }
+            }
+        }
+
+        // ----- Volumen (real) -----
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            Kirigami.Icon {
+                source: "audio-volume-high"; isMask: true; color: cLightGray
+                Layout.preferredWidth: 20; Layout.preferredHeight: 20
+            }
+            QQC2.Slider {
+                id: volumeSlider
+                Layout.fillWidth: true
+                from: 0; to: 1
+                enabled: SystemStatus.volumeAvailable
+                Accessible.name: "Volumen de salida"
+                onMoved: SystemStatus.setVolume(value)
+
+                Binding {
+                    target: volumeSlider; property: "value"
+                    value: SystemStatus.volumeValue
+                    when: !volumeSlider.pressed
+                }
+
+                background: Rectangle {
+                    x: volumeSlider.leftPadding
+                    y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
+                    width: volumeSlider.availableWidth; height: 6; radius: 3
+                    color: cGray
+                    Rectangle {
+                        width: volumeSlider.visualPosition * parent.width
+                        height: parent.height; radius: 3; color: cCrimson
+                    }
+                }
+                handle: Rectangle {
+                    x: volumeSlider.leftPadding + volumeSlider.visualPosition * (volumeSlider.availableWidth - width)
+                    y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
+                    width: 18; height: 18; radius: 9; color: cWhite
+                }
+            }
+        }
+
+        QQC2.ToolButton {
+            Layout.alignment: Qt.AlignRight
+            icon.name: SystemStatus.volumeMuted ? "audio-volume-muted" : "audio-volume-high"
+            icon.color: SystemStatus.volumeMuted ? cCrimson : cLightGray
+            text: SystemStatus.volumeMuted ? "Activar sonido" : "Silenciar"
+            display: QQC2.AbstractButton.TextBesideIcon
+            enabled: SystemStatus.volumeAvailable
+            Accessible.name: text
+            onClicked: SystemStatus.toggleMute()
+        }
+
+        // ----- Micrófono (fuente predeterminada real) -----
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            Kirigami.Icon {
+                source: SystemStatus.microphoneMuted ? "microphone-sensitivity-muted" : "audio-input-microphone"
+                isMask: true; color: SystemStatus.microphoneAvailable ? cLightGray : "#666666"
+                Layout.preferredWidth: 20; Layout.preferredHeight: 20
+            }
+            QQC2.Slider {
+                id: microphoneSlider
+                Layout.fillWidth: true
+                from: 0; to: 1
+                enabled: SystemStatus.microphoneAvailable
+                Accessible.name: "Nivel del micrófono"
+                onMoved: SystemStatus.setMicrophoneVolume(value)
+
+                Binding {
+                    target: microphoneSlider; property: "value"
+                    value: SystemStatus.microphoneVolumeValue
+                    when: !microphoneSlider.pressed
+                }
+
+                background: Rectangle {
+                    x: microphoneSlider.leftPadding
+                    y: microphoneSlider.topPadding + microphoneSlider.availableHeight / 2 - height / 2
+                    width: microphoneSlider.availableWidth; height: 6; radius: 3
+                    color: cGray
+                    Rectangle {
+                        width: microphoneSlider.visualPosition * parent.width
+                        height: parent.height; radius: 3
+                        color: SystemStatus.microphoneAvailable ? cCrimson : "#666666"
+                    }
+                }
+                handle: Rectangle {
+                    x: microphoneSlider.leftPadding + microphoneSlider.visualPosition * (microphoneSlider.availableWidth - width)
+                    y: microphoneSlider.topPadding + microphoneSlider.availableHeight / 2 - height / 2
+                    width: 18; height: 18; radius: 9; color: cWhite
+                }
+            }
+            QQC2.ToolButton {
+                text: !SystemStatus.microphoneAvailable ? "Micrófono no detectado"
+                      : SystemStatus.microphoneMuted ? "Activar micrófono" : "Silenciar micrófono"
+                icon.name: SystemStatus.microphoneMuted ? "microphone-sensitivity-muted" : "audio-input-microphone"
+                icon.color: SystemStatus.microphoneMuted ? cCrimson : cLightGray
+                display: QQC2.AbstractButton.TextBesideIcon
+                enabled: SystemStatus.microphoneAvailable
+                Accessible.name: text
+                onClicked: SystemStatus.toggleMicrophoneMute()
+            }
+        }
+
+        // Accesos secundarios (comandos reales: kcmshell6)
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            Repeater {
+                model: MockData.secondaryActions
+                delegate: Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 70
+                    radius: 14
+                    color: secondaryMouse.containsMouse ? "#242424" : cGray
+                    border.color: cCardBorder
+                    border.width: 1
+
+                    MouseArea {
+                        id: secondaryMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: MockData.kcmshellAvailable
+                        onClicked: MockData.run(modelData.command)
+                    }
+
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Kirigami.Icon {
+                            source: modelData.icon; isMask: true; color: cLightGray
+                            Layout.preferredWidth: 20; Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                        QQC2.Label {
+                            text: modelData.label
+                            color: cLightGray; font.pixelSize: 11
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                    }
+                }
+            }
+        }
+
+        // ----- Reproductor (MPRIS real vía playerctl) -----
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 90
+            radius: 16
+            color: cGray
+            border.color: cCardBorder
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent; anchors.margins: 12; spacing: 12
+
+                Rectangle {
+                    Layout.preferredWidth: 60; Layout.preferredHeight: 60; radius: 10
+                    color: cCrimson
+                    visible: SystemStatus.mprisAvailable
+
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        shadowEnabled: true; shadowColor: cCrimson
+                        shadowOpacity: 0.55; shadowBlur: 0.7
+                    }
+                }
+                Kirigami.Icon {
+                    source: "audio-x-generic"; isMask: true; color: cLightGray
+                    Layout.preferredWidth: 40; Layout.preferredHeight: 40
+                    visible: !SystemStatus.mprisAvailable
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    QQC2.Label {
+                        text: SystemStatus.mprisAvailable ? SystemStatus.mprisTitle : "Sin reproducción activa"
+                        color: cWhite; font.pixelSize: 14; font.bold: true
+                        elide: Text.ElideRight; Layout.fillWidth: true
+                    }
+                    QQC2.Label {
+                        text: SystemStatus.mprisArtist
+                        color: cLightGray; font.pixelSize: 12
+                        visible: SystemStatus.mprisAvailable
+                    }
+                    RowLayout {
+                        spacing: 16
+                        visible: SystemStatus.mprisAvailable
+                        QQC2.ToolButton {
+                            icon.name: "media-skip-backward"; icon.color: cWhite; flat: true
+                            onClicked: SystemStatus.mprisPrevious()
+                        }
+                        QQC2.ToolButton {
+                            icon.name: SystemStatus.mprisPlaying ? "media-playback-pause" : "media-playback-start"
+                            icon.color: cWhite; flat: true
+                            onClicked: SystemStatus.mprisPlayPause()
+                        }
+                        QQC2.ToolButton {
+                            icon.name: "media-skip-forward"; icon.color: cWhite; flat: true
+                            onClicked: SystemStatus.mprisNext()
+                        }
+                    }
+                }
+            }
+        }
+
+        QQC2.Button {
+            Layout.fillWidth: true
+            text: "Configuración rápida"
+            icon.name: "configure"
+            icon.color: cLightGray
+            flat: true
+            onClicked: MockData.run("dylanos --page settings")
+        }
+    }
+}

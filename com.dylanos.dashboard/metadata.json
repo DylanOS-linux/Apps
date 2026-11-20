@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "DylanOS Team"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Glass cards on the desktop: clock, live system metrics, calendar, reminders, media and focus timer",
+        "Description[es]": "Tarjetas de vidrio en el escritorio: reloj, métricas reales del sistema, calendario, recordatorios, medios y enfoque",
+        "Icon": "view-calendar",
+        "Id": "com.dylanos.dashboard",
+        "Name": "DylanOS Dashboard",
+        "Name[es]": "Panel de escritorio DylanOS",
+        "ServiceTypes": [
+            "Plasma/Applet"
+        ],
+        "Version": "0.8.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

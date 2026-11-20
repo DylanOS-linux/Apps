@@ -1,0 +1,145 @@
+#include <QCommandLineParser>
+#include <QGuiApplication>
+#include <QImage>
+#include <QJsonDocument>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickWindow>
+#include <QTimer>
+#include <cstdio>
+
+#include "services/LucideProvider.h"
+#include "services/CrimsonGlassService.h"
+#include "services/SystemService.h"
+#include "services/GamingService.h"
+#include "services/IoTService.h"
+
+int main(int argc, char *argv[])
+{
+    QGuiApplication app(argc, argv);
+    QGuiApplication::setApplicationName("DylanOS Configuration");
+    QGuiApplication::setApplicationVersion(QStringLiteral(DYLANOS_VERSION));
+    QGuiApplication::setOrganizationName("DylanOS");
+    QGuiApplication::setDesktopFileName("org.dylanos.configuration");
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("DylanOS Configuration");
+    parser.addHelpOption();
+    QCommandLineOption pageOption("page", "Abrir una sección concreta (system, network, sound, display…).", "page");
+    QCommandLineOption smokeOption("smoke", "Cargar la interfaz sin interacción y salir (QA).");
+    QCommandLineOption screenshotOption("screenshot", "Guardar una captura de una sección y salir (QA).", "screenshot");
+    QCommandLineOption sizeOption("size", "Tamaño de la ventana para capturas (WxH).", "size");
+    QCommandLineOption applyGlassOption(QStringLiteral("apply-crimson-glass"),
+                                        QStringLiteral("Aplicar Crimson Glass y salir."));
+    QCommandLineOption gamingProfileOption(QStringLiteral("gaming-profile"),
+                                            QStringLiteral("Aplicar un perfil Gaming permitido y salir."),
+                                            QStringLiteral("id"));
+    QCommandLineOption gamingRestoreOption(QStringLiteral("restore-gaming-profile"),
+                                            QStringLiteral("Restaurar los ajustes previos de Gaming y salir."));
+    QCommandLineOption gamingStatusOption(QStringLiteral("gaming-status"),
+                                          QStringLiteral("Imprimir el estado Gaming en JSON y salir."));
+    QCommandLineOption iotStatusOption(QStringLiteral("iot-status"),
+                                       QStringLiteral("Imprimir el estado IoT en JSON y salir."));
+    QCommandLineOption headlessOption(QStringLiteral("headless"),
+                                      QStringLiteral("No abrir la interfaz gráfica."));
+    parser.addOptions({pageOption, smokeOption, screenshotOption, sizeOption,
+                       applyGlassOption, gamingProfileOption, gamingRestoreOption,
+                       gamingStatusOption, iotStatusOption, headlessOption});
+    parser.process(app);
+
+    if (parser.isSet(applyGlassOption)) {
+        auto *glassService = new CrimsonGlassService(&app);
+        return glassService->apply() ? 0 : 2;
+    }
+    if (parser.isSet(gamingStatusOption)) {
+        auto *gamingService = new GamingService(&app, false);
+        const QJsonDocument status = QJsonDocument::fromVariant(gamingService->status());
+        const QByteArray json = status.toJson(QJsonDocument::Compact);
+        fwrite(json.constData(), 1, size_t(json.size()), stdout);
+        fputc('\n', stdout);
+        return 0;
+    }
+    if (parser.isSet(iotStatusOption)) {
+        auto *iotService = new IoTService(&app);
+        const QByteArray json = QJsonDocument::fromVariant(iotService->status()).toJson(QJsonDocument::Compact);
+        fwrite(json.constData(), 1, size_t(json.size()), stdout);
+        fputc('\n', stdout);
+        return 0;
+    }
+    if (parser.isSet(gamingProfileOption)) {
+        auto *gamingService = new GamingService(&app, false);
+        const bool ok = gamingService->applyProfile(parser.value(gamingProfileOption));
+        if (!ok)
+            fprintf(stderr, "%s\n", gamingService->lastError().toUtf8().constData());
+        return ok ? 0 : 2;
+    }
+    if (parser.isSet(gamingRestoreOption)) {
+        auto *gamingService = new GamingService(&app, false);
+        const bool ok = gamingService->restoreProfile();
+        if (!ok)
+            fprintf(stderr, "%s\n", gamingService->lastError().toUtf8().constData());
+        return ok ? 0 : 2;
+    }
+    if (parser.isSet(headlessOption))
+        return 0;
+
+    auto *service = new SystemService(&app);
+    auto *glassService = new CrimsonGlassService(&app);
+    auto *gamingService = new GamingService(&app);
+    auto *iotService = new IoTService(&app);
+
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty(QStringLiteral("System"), service);
+    engine.rootContext()->setContextProperty(QStringLiteral("CrimsonGlass"), glassService);
+    engine.rootContext()->setContextProperty(QStringLiteral("Gaming"), gamingService);
+    engine.rootContext()->setContextProperty(QStringLiteral("IoT"), iotService);
+    engine.addImageProvider(QStringLiteral("lucide"), new LucideProvider());
+
+    engine.rootContext()->setContextProperty(QStringLiteral("startPage"),
+                                             parser.isSet(pageOption) ? parser.value(pageOption)
+                                                                      : QStringLiteral("system"));
+
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,
+                     []() { QCoreApplication::exit(1); }, Qt::QueuedConnection);
+    // Carga por URL con el prefijo estándar /qt/qml (patrón de DylanOS
+    // Explorer). El singleton Theme vive en qml/theme/, NO en el mismo
+    // directorio que Main.qml: si estuviera junto a él, el qmldir implícito
+    // del directorio lo registraría como tipo plano y rompería la app en
+    // Qt 6.8 ("Theme was a singleton at compile time…").
+    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/org/dylanos/configuration/qml/Main.qml")));
+    if (engine.rootObjects().isEmpty())
+        return 1;
+
+    if (parser.isSet(sizeOption)) {
+        const QStringList dims = parser.value(sizeOption).split(QLatin1Char('x'));
+        if (dims.size() == 2) {
+            for (QObject *obj : engine.rootObjects()) {
+                if (auto *window = qobject_cast<QQuickWindow *>(obj))
+                    window->resize(dims.value(0).toInt(), dims.value(1).toInt());
+            }
+        }
+    }
+
+    if (parser.isSet(screenshotOption)) {
+        const QString target = parser.value(screenshotOption);
+        QTimer::singleShot(900, &app, [&engine, target]() {
+            for (QObject *obj : engine.rootObjects()) {
+                if (auto *window = qobject_cast<QQuickWindow *>(obj)) {
+                    const QImage shot = window->grabWindow();
+                    const bool ok = shot.save(target);
+                    QCoreApplication::exit(ok ? 0 : 2);
+                    return;
+                }
+            }
+            QCoreApplication::exit(1);
+        });
+        return app.exec();
+    }
+
+    if (parser.isSet(smokeOption)) {
+        QTimer::singleShot(1200, &app, []() { QCoreApplication::exit(0); });
+        return app.exec();
+    }
+
+    return app.exec();
+}

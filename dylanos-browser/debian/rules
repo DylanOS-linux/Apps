@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+BROWSER_ARTIFACT ?= artifacts/phase-2/package
+
+.PHONY: check-browser-artifact
+
+check-browser-artifact:
+	@python3 scripts/dylanos/package_payload.py verify --payload "$(BROWSER_ARTIFACT)"
+
+%:
+	dh $@
+
+override_dh_auto_build: check-browser-artifact
+	@:

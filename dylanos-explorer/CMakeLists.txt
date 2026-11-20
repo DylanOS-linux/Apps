@@ -1,0 +1,114 @@
+cmake_minimum_required(VERSION 3.21)
+project(DylanOSExplorer VERSION 1.0.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
+
+# Qt 6.4 is what Debian 12 ships; Debian 13 ships 6.8. Nothing newer is required.
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Concurrent)
+# ECM aporta FindKF6 (paquete paraguas de componentes KDE) como en el resto
+# de DylanOS; sin esto el configure no encuentra KF6Config.cmake en Debian.
+find_package(ECM 6.10 REQUIRED NO_MODULE)
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+find_package(KF6 6.10 REQUIRED COMPONENTS KIO)
+find_package(Qt6 6.4 QUIET OPTIONAL_COMPONENTS Test)
+qt_standard_project_setup()
+
+# --- Pure Qt Core services (also linked by the unit tests) -------------------
+add_library(explorer_services STATIC
+    src/services/FileOperations.cpp
+    src/services/FileOperations.h
+    src/services/Formatters.cpp
+    src/services/Formatters.h
+)
+target_include_directories(explorer_services PUBLIC src)
+target_link_libraries(explorer_services PUBLIC Qt6::Core)
+
+# --- Application --------------------------------------------------------------
+qt_add_executable(dylanos-explorer src/main.cpp)
+
+set_source_files_properties(qml/theme/Theme.qml qml/theme/Icons.qml
+    PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
+qt_add_qml_module(dylanos-explorer
+    URI DylanOS.Explorer
+    VERSION 1.0
+    RESOURCE_PREFIX /qt/qml
+    SOURCES
+        src/models/FileListModel.cpp
+        src/models/FileListModel.h
+        src/models/PlacesService.cpp
+        src/models/PlacesService.h
+        src/services/ExplorerController.cpp
+        src/services/ExplorerController.h
+        src/services/DylanIcon.cpp
+        src/services/DylanIcon.h
+    QML_FILES
+        qml/Main.qml
+        qml/theme/Theme.qml
+        qml/theme/Icons.qml
+        qml/components/Txt.qml
+        qml/components/Icon.qml
+        qml/components/IconButton.qml
+        qml/components/DButton.qml
+        qml/components/DScrollBar.qml
+        qml/components/FolderIcon.qml
+        qml/components/FileTypeIcon.qml
+        qml/components/WindowControls.qml
+        qml/components/ResizeEdge.qml
+        qml/components/Sidebar.qml
+        qml/components/SidebarItem.qml
+        qml/components/DeviceItem.qml
+        qml/components/Header.qml
+        qml/components/ViewToggle.qml
+        qml/components/SearchField.qml
+        qml/components/FolderCard.qml
+        qml/components/RecentTable.qml
+        qml/components/FileGridView.qml
+        qml/components/FileListView.qml
+        qml/components/FileColumnsView.qml
+        qml/components/PreviewPanel.qml
+        qml/components/EmptyState.qml
+        qml/components/ContextMenu.qml
+        qml/components/DlgBase.qml
+        qml/components/ConfirmDialog.qml
+        qml/components/PromptDialog.qml
+        qml/components/PropertiesDialog.qml
+        qml/components/SettingsDialog.qml
+        qml/components/Toast.qml
+        qml/components/ProgressPanel.qml
+        qml/pages/HomePage.qml
+        qml/pages/DirectoryPage.qml
+)
+
+target_include_directories(dylanos-explorer PRIVATE src src/models src/services)
+# Debian instala las cabeceras de KF6 en /usr/include/KF6/<Componente> y exporta
+# solo ese subdirectorio; los includes estilo <KIOCore/xxx.h> necesitan además
+# la raíz de KF6, que derivamos de la cabecera encontrada (sin hardcodear rutas).
+find_path(KF6_KIO_HEADER kfileitem.h HINTS /usr/include/KF6/KIOCore /usr/include/KF6/KIOFileWidgets)
+if(KF6_KIO_HEADER)
+    get_filename_component(KF6_HEADERS_ROOT "${KF6_KIO_HEADER}/.." ABSOLUTE)
+    target_include_directories(dylanos-explorer PRIVATE "${KF6_HEADERS_ROOT}")
+endif()
+target_link_libraries(dylanos-explorer PRIVATE
+    explorer_services
+    Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::Concurrent
+    KF6::KIOCore KF6::KIOGui KF6::KIOFileWidgets
+)
+
+# --- Install -------------------------------------------------------------------
+include(GNUInstallDirs)
+install(TARGETS dylanos-explorer RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES assets/org.dylanos.explorer.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES assets/dylanos-explorer.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+
+# --- Tests ---------------------------------------------------------------------
+enable_testing()
+if(Qt6Test_FOUND)
+    qt_add_executable(tst_fileoperations tests/tst_fileoperations.cpp)
+    target_link_libraries(tst_fileoperations PRIVATE explorer_services Qt6::Test)
+    add_test(NAME fileoperations COMMAND tst_fileoperations)
+else()
+    message(STATUS "Qt6::Test not found: unit tests disabled (install qt6-base-dev)")
+endif()
