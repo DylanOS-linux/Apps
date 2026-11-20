@@ -1,16 +1,27 @@
-# DylanOS Apps
+<h1 align="center">DylanOS Apps</h1>
 
-Repositorio oficial de aplicaciones y componentes de software del ecosistema **DylanOS**.
+<p align="center">
+  <strong>Aplicaciones, componentes de escritorio y widgets del ecosistema DylanOS.</strong><br>
+  Repositorio modular: cada proyecto se desarrolla, compila y evoluciona de forma independiente.
+</p>
 
-Este repositorio contiene las aplicaciones, servicios, componentes del escritorio, widgets y herramientas desarrolladas para integrarse con DylanOS.
-
-La arquitectura está organizada como un repositorio modular: cada proyecto puede desarrollarse, compilarse y evolucionar de forma independiente, mientras mantiene compatibilidad con el ecosistema DylanOS.
+<p align="center">
+  <a href="https://www.debian.org/"><img src="https://img.shields.io/badge/base-Debian%2013-A81D33?style=flat-square&logo=debian&logoColor=white" alt="Base Debian 13"></a>
+  <a href="https://kde.org/plasma-desktop/"><img src="https://img.shields.io/badge/escritorio-KDE%20Plasma%206-1D99F3?style=flat-square&logo=kde&logoColor=white" alt="Escritorio KDE Plasma 6"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/licencia-GPL--3.0--or--later-blue?style=flat-square" alt="Licencia GPL-3.0-or-later"></a>
+</p>
 
 ---
 
-## 📦 Contenido
+## Acerca de este repositorio
 
-### 🖥️ Aplicaciones principales
+Este repositorio reúne las aplicaciones, los servicios, los componentes del escritorio y los widgets desarrollados para integrarse con DylanOS.
+
+La arquitectura es modular: cada proyecto puede desarrollarse, compilarse y evolucionar por separado, siempre que mantenga la compatibilidad con el ecosistema y con la identidad visual del sistema.
+
+## Contenido
+
+### Aplicaciones principales
 
 | Proyecto | Descripción |
 |---|---|
@@ -26,224 +37,139 @@ La arquitectura está organizada como un repositorio modular: cada proyecto pued
 | `archivos` | Aplicación de archivos |
 | `ozi-flappy` | Juego Flappy |
 
-### 🧩 Componentes del escritorio
+### Componentes del escritorio
+
+| Proyecto | Descripción |
+|---|---|
+| `com.dylanos.activeapp` | Identificación de la aplicación activa |
+| `com.dylanos.dashboard` | Dashboard del escritorio |
+| `com.dylanos.dock` | Dock de DylanOS |
+| `com.dylanos.search` | Componente de búsqueda |
+| `workspace` | Componentes del espacio de trabajo |
+
+### Widgets
 
 | Proyecto | Descripción |
 |---|---|
 | `dylanos-widgets` | Sistema principal de widgets |
 | `dylanos-widgets-lib` | Biblioteca compartida para widgets |
+| `dylanos-widgets-battery` | Widget de batería |
 | `dylanos-widgets-calculator` | Widget de calculadora |
 | `dylanos-widgets-calendar` | Widget de calendario |
+| `dylanos-widgets-clipboard` | Widget del portapapeles |
 | `dylanos-widgets-clock` | Widget de reloj |
-| `dylanos-widgets-weather` | Widget meteorológico |
-| `dylanos-widgets-network` | Widget de red |
-| `dylanos-widgets-battery` | Widget de batería |
-| `dylanos-widgets-media` | Widget multimedia |
 | `dylanos-widgets-disk` | Widget de almacenamiento |
 | `dylanos-widgets-info` | Widget de información |
+| `dylanos-widgets-media` | Widget multimedia |
+| `dylanos-widgets-network` | Widget de red |
+| `dylanos-widgets-nextevent` | Widget del próximo evento |
 | `dylanos-widgets-notes` | Widget de notas |
-| `dylanos-widgets-todo` | Widget de tareas |
 | `dylanos-widgets-photos` | Widget de fotografías |
 | `dylanos-widgets-pomodoro` | Widget Pomodoro |
 | `dylanos-widgets-resources` | Widget de recursos del sistema |
 | `dylanos-widgets-screenshot` | Widget de capturas de pantalla |
 | `dylanos-widgets-shortcuts` | Widget de accesos directos |
+| `dylanos-widgets-todo` | Widget de tareas |
 | `dylanos-widgets-updates` | Widget de actualizaciones |
+| `dylanos-widgets-weather` | Widget meteorológico |
 | `dylanos-widgets-worldclock` | Widget de reloj mundial |
-| `dylanos-widgets-clipboard` | Widget del portapapeles |
-| `dylanos-widgets-nextevent` | Widget del próximo evento |
 
-### 🧱 Componentes del sistema
-
-| Proyecto | Descripción |
-|---|---|
-| `com.dylanos.activeapp` | Componente para identificar la aplicación activa |
-| `com.dylanos.dashboard` | Dashboard del escritorio |
-| `com.dylanos.dock` | Dock de DylanOS |
-| `com.dylanos.search` | Componente de búsqueda |
-
-### 🛠️ Otros
-
-| Proyecto | Descripción |
-|---|---|
-| `workspace` | Componentes relacionados con el espacio de trabajo |
-
----
-
-## 🏗️ Arquitectura
+## Estructura
 
 ```text
 Apps/
-│
-├── Aplicaciones
-│   ├── dylanos-browser
-│   ├── dylanos-store
-│   ├── dylanos-app-center
-│   ├── dylanos-explorer
-│   ├── dylanos-configuration
-│   ├── dylanos-control-center
-│   ├── dylanos-process
-│   ├── dylanos-spotlight
-│   ├── calculator
-│   ├── archivos
-│   └── ozi-flappy
-│
-├── Escritorio
-│   ├── com.dylanos.activeapp
-│   ├── com.dylanos.dashboard
-│   ├── com.dylanos.dock
-│   └── com.dylanos.search
-│
-├── Widgets
-│   ├── dylanos-widgets
-│   ├── dylanos-widgets-lib
-│   └── dylanos-widgets-*
-│
-└── workspace
+├── dylanos-browser/            # Aplicaciones
+├── dylanos-store/
+├── dylanos-app-center/
+├── dylanos-explorer/
+├── dylanos-configuration/
+├── dylanos-control-center/
+├── dylanos-process/
+├── dylanos-spotlight/
+├── calculator/
+├── archivos/
+├── ozi-flappy/
+├── com.dylanos.activeapp/      # Componentes del escritorio
+├── com.dylanos.dashboard/
+├── com.dylanos.dock/
+├── com.dylanos.search/
+├── workspace/
+├── dylanos-widgets/            # Widgets
+├── dylanos-widgets-lib/
+└── dylanos-widgets-*/
 ```
 
-El patrón `dylanos-widgets-*` permite mantener cada widget como un componente independiente sin perder la posibilidad de compartir infraestructura mediante `dylanos-widgets-lib`.
+El patrón `dylanos-widgets-*` permite mantener cada widget como un componente independiente sin perder la infraestructura compartida de `dylanos-widgets-lib`.
 
----
-
-## 🎨 Filosofía de diseño
-
-Las aplicaciones de DylanOS deben mantener una identidad visual coherente con el sistema.
-
-Principios:
-
-- **Negro, rojo y blanco** como identidad principal.
-- Interfaces modernas y limpias.
-- Integración con **Crimson Glass** cuando corresponda.
-- Consistencia entre aplicaciones y componentes.
-- Animaciones y efectos utilizados con moderación.
-- Prioridad al rendimiento y la fluidez.
-- Integración nativa con el escritorio cuando sea posible.
-
-El objetivo no es clonar otro sistema operativo, sino construir una **identidad propia para DylanOS**.
-
----
-
-## ⚙️ Tecnologías
-
-Dependiendo del proyecto, este repositorio puede utilizar tecnologías como:
-
-- **C++**
-- **Qt 6**
-- **QML**
-- **Python**
-- **JavaScript**
-- **TypeScript**
-- **React**
-- **HTML / CSS**
-- **Node.js**
-- **D-Bus**
-- **KDE Frameworks**
-- APIs nativas de Linux
-
-Cada aplicación debe documentar sus requisitos y proceso de compilación en su propio `README.md` cuando sea necesario.
-
----
-
-## 🧪 Desarrollo
+## Desarrollo
 
 Clona el repositorio:
 
 ```bash
-git clone https://github.com/dylanos/Apps.git
+git clone https://github.com/DylanOS-linux/Apps.git
 cd Apps
 ```
 
-Para trabajar en una aplicación concreta:
+Cada proyecto documenta sus propios requisitos, instrucciones de compilación y pruebas en su `README.md`. Para trabajar en un proyecto concreto:
 
 ```bash
 cd dylanos-configuration
 ```
 
-o:
+## Tecnologías
 
-```bash
-cd dylanos-widgets-weather
-```
+Según el proyecto, el repositorio utiliza:
 
-Cada proyecto es responsable de documentar sus propias instrucciones de desarrollo, compilación y pruebas.
+- **C++**, **Qt 6** y **QML**
+- **Python**
+- **JavaScript** y **TypeScript**
+- **React**
+- **HTML** y **CSS**
+- **Node.js**
+- **D-Bus** y **KDE Frameworks**
+- APIs nativas de Linux
 
----
+## Criterios de desarrollo
 
-## 📋 Estándares
+Las aplicaciones de DylanOS mantienen una identidad visual coherente con el sistema:
 
-El código debe priorizar:
+- negro, rojo y blanco como identidad principal;
+- interfaces limpias y animaciones moderadas;
+- integración con Crimson Glass cuando corresponda;
+- prioridad al rendimiento, la fluidez y la integración nativa con el escritorio.
 
-- **KISS**
-- **DRY**
-- **SOLID**
-- Modularidad
-- Seguridad
-- Rendimiento
-- Mantenibilidad
-- Reutilización de componentes
+El código prioriza KISS, DRY, SOLID, modularidad, seguridad, rendimiento, mantenibilidad y reutilización de componentes. Los componentes compartidos evitan la duplicación innecesaria y utilizan las bibliotecas existentes del ecosistema cuando es apropiado.
 
-Los componentes compartidos deben evitar duplicación innecesaria y, cuando sea apropiado, utilizar las bibliotecas existentes del ecosistema DylanOS.
+El objetivo no es clonar otro sistema operativo, sino construir una identidad propia para DylanOS.
 
----
+## Contribuir
 
-## 🔀 Contribuciones
+Antes de enviar un cambio:
 
-Las contribuciones deben mantener la estabilidad del ecosistema DylanOS.
+1. Comprende la arquitectura existente.
+2. Revisa las dependencias y los componentes relacionados.
+3. Implementa el cambio de forma modular.
+4. Prueba la aplicación afectada.
+5. Comprueba que no se rompan las integraciones existentes.
+6. Documenta los cambios relevantes.
+7. Abre un pull request.
 
-Antes de realizar cambios:
+Los cambios que afectan a varias aplicaciones o componentes se evalúan antes de integrarse.
 
-1. Comprender la arquitectura existente.
-2. Revisar dependencias y componentes relacionados.
-3. Implementar cambios de forma modular.
-4. Probar la aplicación afectada.
-5. Comprobar que no se rompan integraciones existentes.
-6. Documentar cambios relevantes.
-7. Crear un Pull Request.
+## Licencia
 
-Los cambios que afecten múltiples aplicaciones o componentes deben evaluarse cuidadosamente antes de integrarse.
+Este repositorio se distribuye bajo los términos de [`LICENSE`](./LICENSE) (GPL-3.0-or-later). Las aplicaciones con una licencia específica o con dependencias de terceros respetan sus propios términos.
 
----
+## Ecosistema DylanOS
 
-## 🧩 Relación con DylanOS
-
-Este repositorio forma parte de la arquitectura modular de la organización DylanOS:
-
-```text
-DylanOS
-│
-├── DylanOS
-│   └── Sistema operativo principal
-│
-├── Apps
-│   └── Aplicaciones y componentes
-│
-├── Themes
-│   └── Temas y personalización
-│
-├── Updates
-│   └── Sistema de actualizaciones
-│
-└── Documentation
-    └── Documentación del ecosistema
-```
-
-El repositorio `DylanOS` contiene el desarrollo principal del sistema operativo, mientras que `Apps` permite mantener el software del ecosistema de forma independiente y reutilizable.
+| Repositorio | Contenido |
+|---|---|
+| [DylanOS](https://github.com/dylanneymarmontalvo2014-lgtm/DylanOS) | Sistema operativo y desarrollo principal |
+| [Apps](https://github.com/DylanOS-linux/Apps) | Aplicaciones y componentes |
+| [Branding](https://github.com/DylanOS-linux/Branding) | Identidad visual y recursos oficiales |
+| [Documentation](https://github.com/DylanOS-linux/Documentation) | Documentación técnica |
+| [Temas](https://github.com/DylanOS-linux/Temas) | Temas y personalización |
 
 ---
 
-## 📄 Licencia
-
-Este repositorio se distribuye bajo los términos establecidos en [`LICENSE`](./LICENSE).
-
-Las aplicaciones que incluyan una licencia específica o dependencias con licencias diferentes deben respetar sus respectivos términos.
-
----
-
-## 🌐 DylanOS
-
-**DylanOS** es un sistema operativo basado en Linux enfocado en una experiencia moderna, personalizable, integrada y eficiente.
-
-**DylanOS Apps** es el espacio donde sus aplicaciones y componentes cobran vida.
-
-> **Build the ecosystem. Not just the OS.**
+<p align="center"><sub>DylanOS — Tu sistema, tu experiencia.</sub></p>
